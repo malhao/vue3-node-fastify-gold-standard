@@ -10,7 +10,7 @@
 - **When Nuxt at all:** choose Nuxt over the plain Vite SPA when you need SSR/SSG, SEO, file-based routing, edge rendering, or a server layer. For an authenticated internal dashboard with no SEO needs, the SPA prompt is the simpler, correct choice — don't adopt Nuxt reflexively.
 - **Deployment shape (decide first — it colors everything):**
   - **(A) Presentation + BFF (default for this stack):** Nuxt renders the UI and its Nitro `server/` layer acts as a **backend-for-frontend** in front of the existing Node/Prisma API. The BFF holds the session/auth token server-side (httpOnly cookie), does SSR data fetching, aggregates/proxies upstream calls, and never exposes upstream secrets to the browser. Here the backend remains the authoritative implementer of `shared-api-conventions.md`; the BFF conforms to it as a client and may re-expose a trimmed surface to its own frontend.
-  - **(B) Full-stack Nuxt:** Nitro `server/api` routes *are* the API (optionally with Prisma directly). Choose this only if you are **not** running the separate Node backend. In that case this app implements `shared-api-conventions.md` directly, and the backend prompt's rules (centralized errors, auth/authz, raw-SQL safety, structured logging) apply to the `server/` layer.
+  - **(B) Full-stack Nuxt:** Nitro `server/api` routes _are_ the API (optionally with Prisma directly). Choose this only if you are **not** running the separate Node backend. In that case this app implements `shared-api-conventions.md` directly, and the backend prompt's rules (centralized errors, auth/authz, raw-SQL safety, structured logging) apply to the `server/` layer.
 - Scale rigor to the task; state assumptions inline; prefer official Nuxt modules over bespoke wiring.
 - **Version:** target **Nuxt 4** (current stable; `nuxt@^4`). Do not chase Nuxt 5 / Nitro v3 nightly in production — note it's on the horizon and keep upgrades in mind, but pin to stable.
 
@@ -57,7 +57,7 @@ nuxt.config.ts
 ```
 
 - **Feature modularity:** for large apps, use **Nuxt Layers** to encapsulate a feature/domain (its own pages, components, composables, server routes, config) and compose them. For smaller apps, group by feature within `components/`, `composables/`, and `stores/` and keep pages thin.
-- **`shared/` is the contract home:** put Zod schemas and DTO types here so a server route and a client form validate against the *same* definition — genuine full-stack type + validation safety.
+- **`shared/` is the contract home:** put Zod schemas and DTO types here so a server route and a client form validate against the _same_ definition — genuine full-stack type + validation safety.
 
 ## 3. Data Fetching & State
 
@@ -73,7 +73,7 @@ Nuxt ships isomorphic data fetching; use the right tool per case rather than rea
 
 - **One schema, both sides:** define Zod schemas in `shared/schemas`. Nitro server routes validate incoming payloads with them (`await readValidatedBody(event, schema.parse)`); the client validates forms and API responses with the same schemas. Derive types with `z.infer` — never hand-maintain parallel interfaces.
 - **Consuming the backend (shape A):** generate a typed, Zod-validated upstream client from the backend's OpenAPI (`orval` / `openapi-zod-client`) and use it inside `server/utils` — so the BFF↔backend contract stays in lockstep with `shared-api-conventions.md`.
-- **Implementing the contract (shape B):** generate OpenAPI *from* these Zod schemas (`zod-openapi`) and follow the backend prompt's API rules for the `server/` layer.
+- **Implementing the contract (shape B):** generate OpenAPI _from_ these Zod schemas (`zod-openapi`) and follow the backend prompt's API rules for the `server/` layer.
 - **Form ↔ request ↔ error mapping:** the same Zod schema backs `<UForm :schema>` and the outgoing request DTO; backend `422` field errors map onto the form via `form.setErrors([{ path, message }])` (shape defined in `shared-api-conventions.md`).
 
 ## 5. Runtime Config & Secrets
@@ -120,5 +120,5 @@ Nuxt's server layer is a real advantage here: **secrets can stay server-side**, 
 - **`@nuxt/eslint`** (project-aware flat config, `eslint.config.mjs`) + `eslint-plugin-vuejs-accessibility` + Prettier, enforced in CI + pre-commit. (A first-party Nuxt a11y module is planned for v5; until then the ESLint plugin covers it.)
 - **`nuxt typecheck`** in CI — the build alone won't catch all type errors, and Nuxt's per-context tsconfigs matter (app vs server vs shared).
 - **Conventions:** `<script setup lang="ts">`; `defineProps`/`defineEmits` with generic type args; `defineModel` for two-way binding; multi-word component names; consistent SFC block order; scoped styles.
-- **TSDoc** on public composables, server utilities, and non-obvious logic — explain the *why* and invariants, not types the compiler already knows.
+- **TSDoc** on public composables, server utilities, and non-obvious logic — explain the _why_ and invariants, not types the compiler already knows.
 - Prefer Nuxt Layers / composables for reuse; avoid circular imports (share via `shared/`); keep pages and components thin.

@@ -16,14 +16,14 @@
 - **Runtime:** Node.js (Active LTS). ES Modules (ESM), not CommonJS.
 - **Package manager:** pnpm.
 - **Language:** TypeScript, strict mode (`"strict": true`, plus `noUncheckedIndexedAccess`).
-- **Web framework:** Express 5 (native async rejection forwarding). *Alternative:* Fastify, if you want schema validation and Pino logging built into the framework — swap the framework-specific notes accordingly.
+- **Web framework:** Express 5 (native async rejection forwarding). _Alternative:_ Fastify, if you want schema validation and Pino logging built into the framework — swap the framework-specific notes accordingly.
 - **Database & ORM:** PostgreSQL with Prisma.
 - **Validation & schemas:** Zod (single source of truth — see §3).
 - **API paradigm:** RESTful (GraphQL only if explicitly requested).
 
 ## 2. Architecture — Feature-Based (Modular)
 
-Organize by feature/domain, not by technical role. Co-locate everything a feature needs so it can be understood, changed, and deleted as a unit. Keep the layered discipline *within* each module: Controller → Service → Repository.
+Organize by feature/domain, not by technical role. Co-locate everything a feature needs so it can be understood, changed, and deleted as a unit. Keep the layered discipline _within_ each module: Controller → Service → Repository.
 
 ```
 /prisma
@@ -80,7 +80,7 @@ Zod owns the **API boundary**; Prisma owns **persistence**. Do not conflate them
 - **Authorization:** enforce at two levels — coarse role checks in middleware, and **object-level ownership checks in the service layer** (a user must not read/modify another user's resources just by changing an ID). This is the most common real-world breach vector; treat it as mandatory.
 - **HTTP headers:** Helmet with a sensible Content-Security-Policy and `nosniff`.
 - **CORS:** explicit origin allowlist. No wildcard in production.
-- **Rate limiting:** apply application-layer rate limiting to mitigate **brute-force attempts and abusive/expensive requests** (stricter limits on auth and write endpoints). Note clearly: this is *not* DDoS protection — real volumetric DDoS mitigation is an edge/CDN/infrastructure concern (e.g. Cloudflare, a WAF, or the load balancer), not something application middleware can handle.
+- **Rate limiting:** apply application-layer rate limiting to mitigate **brute-force attempts and abusive/expensive requests** (stricter limits on auth and write endpoints). Note clearly: this is _not_ DDoS protection — real volumetric DDoS mitigation is an edge/CDN/infrastructure concern (e.g. Cloudflare, a WAF, or the load balancer), not something application middleware can handle.
 - **Payload limits:** set a strict request body-size limit to prevent payload-based DoS.
 - **Injection (Postgres/Prisma reality):** Prisma parameterizes queries, so ORM calls are safe by default. The real risk is **raw SQL** — never use `$queryRawUnsafe` or string-concatenated SQL; use parameterized `$queryRaw` tagged templates. ("NoSQL injection" does not apply to this stack.)
 - **XSS (correct model for a JSON API):** XSS is an **output-encoding** concern owned by whatever renders the data, not an input-stripping concern. Do **not** strip/sanitize characters out of stored data (it corrupts legitimate content like code snippets or bios). Instead: validate and normalize on input, store faithfully, encode on output, and send correct `Content-Type` and `nosniff` headers.
@@ -121,5 +121,5 @@ Zod owns the **API boundary**; Prisma owns **persistence**. Do not conflate them
 
 - **Robust, idiomatic Node.js.** ("Functional" here means favoring pure functions and immutability where practical — not a hard functional-programming mandate.)
 - **ESLint (flat config, `eslint.config.js`) + Prettier**, enforced in CI and via pre-commit hook.
-- **JSDoc/TSDoc** on public APIs and non-obvious logic — explain the *why* and any invariants/edge cases. Don't restate types the compiler already knows.
+- **JSDoc/TSDoc** on public APIs and non-obvious logic — explain the _why_ and any invariants/edge cases. Don't restate types the compiler already knows.
 - Prefer small, composable modules; avoid god-services and circular imports between modules (share via `/shared`).

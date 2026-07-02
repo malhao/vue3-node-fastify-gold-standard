@@ -22,16 +22,19 @@ This document is the **single source of truth** for the interface between the No
 **Every** response uses one of two shapes. No bare arrays, no bare scalars.
 
 **Success:**
+
 ```json
 {
-  "data": { },
-  "meta": { }
+  "data": {},
+  "meta": {}
 }
 ```
+
 - `data` — the resource or array of resources.
 - `meta` — optional; present for lists (pagination, see §4) and where extra context is useful. Omit or `{}` when not needed.
 
 **Error:**
+
 ```json
 {
   "error": {
@@ -42,6 +45,7 @@ This document is the **single source of truth** for the interface between the No
   }
 }
 ```
+
 - `code` — stable, machine-readable `SCREAMING_SNAKE_CASE`. **The frontend branches on `code`, never on `message`.**
 - `message` — human-readable, safe to surface; never leaks internals/stack traces.
 - `details` — optional structured context (see §3 for the validation-error shape).
@@ -52,6 +56,7 @@ This document is the **single source of truth** for the interface between the No
 - **HTTP status ↔ meaning:** `400` malformed request, `401` unauthenticated, `403` authenticated-but-forbidden, `404` not found, `409` conflict, `422` semantic validation failure, `429` rate-limited, `5xx` server fault.
 - **Canonical error `code` values** (extend as needed, keep stable): `VALIDATION_FAILED`, `UNAUTHENTICATED`, `FORBIDDEN`, `RESOURCE_NOT_FOUND`, `CONFLICT`, `RATE_LIMITED`, `INTERNAL_ERROR`.
 - **Validation errors (`422`)** carry field-level detail so the frontend can map them onto form fields:
+
 ```json
 {
   "error": {
@@ -64,6 +69,7 @@ This document is the **single source of truth** for the interface between the No
   }
 }
 ```
+
 - `path` uses **dot notation** for nested fields, matching how the frontend addresses form fields. This maps directly onto Nuxt UI's `form.setErrors([{ path, message }])`.
 - The frontend validates with the same Zod schema **before** submit (fast UX) but always treats the backend `422` as authoritative.
 
@@ -71,9 +77,10 @@ This document is the **single source of truth** for the interface between the No
 
 - **Default: cursor (keyset) pagination.** Request: `?limit=<n>&cursor=<opaque>`. `limit` has a documented default and hard max (e.g. default 20, max 100).
 - **List response:**
+
 ```json
 {
-  "data": [ ],
+  "data": [],
   "meta": {
     "pagination": {
       "nextCursor": "eyJpZCI6MTIzfQ==",
@@ -83,6 +90,7 @@ This document is the **single source of truth** for the interface between the No
   }
 }
 ```
+
 - `nextCursor` is `null` when there are no more pages. Cursors are opaque, base64-encoded, and must not be constructed or parsed by the client.
 - **Offset pagination** (`?page=&pageSize=`) is permitted only for small, bounded, admin-style lists; when used, `meta.pagination` carries `page`, `pageSize`, and `total`.
 

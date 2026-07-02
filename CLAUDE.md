@@ -29,11 +29,13 @@ Treat these as the spec. When in doubt, follow them; if one is ambiguous or conf
 The specs pin specific versions and tools, but the ecosystem moves fast. Do **not** trust version numbers or API details from the spec (or from training data) verbatim.
 
 **1. Verify the current version at install time.**
+
 - Check the latest stable release (npm registry / the project's releases) before pinning.
-- Honor the spec's *intent*, not its literal number: where it says a floor (e.g. "Nuxt UI v4+", "Node Active LTS", "Vite 8 / Rolldown", "Zod", "Pinia Colada"), install the current version that satisfies that floor.
+- Honor the spec's _intent_, not its literal number: where it says a floor (e.g. "Nuxt UI v4+", "Node Active LTS", "Vite 8 / Rolldown", "Zod", "Pinia Colada"), install the current version that satisfies that floor.
 - If a pinned choice has **materially changed** since the spec was written — a rename, a merge, a deprecation, a new major with breaking changes, or a shift in the recommended approach — stop and flag it, propose the current equivalent, and note it in `/docs` (or a `DECISIONS.md`) rather than silently diverging.
 
 **2. Read the library's own current docs — check for `llms.txt` first.**
+
 - For each significant dependency, look for a machine-readable docs surface before writing integration code: `https://<docs-domain>/llms.txt` (an index of key pages) and `https://<docs-domain>/llms-full.txt` (fuller export). Many doc sites also serve Markdown via a `.md` URL suffix or `Accept: text/markdown`.
 - Fetch the relevant linked pages and write integration code against **those**, not against remembered APIs. This is especially important for the fast-moving pieces here: Prisma, Zod (schema/OpenAPI generation), OpenTelemetry JS, Vite, Pinia Colada, `zod-openapi`, and the OpenAPI→client generator.
 - If no `llms.txt` exists, fall back to the official docs site and the package README/CHANGELOG for the installed version.

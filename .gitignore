@@ -1,0 +1,29 @@
+node_modules/
+dist/
+build/
+.output/
+.nuxt/
+coverage/
+
+# env
+.env
+.env.*
+!.env.example
+
+# logs
+*.log
+pnpm-debug.log*
+
+# editor/OS
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# testing
+playwright-report/
+test-results/
+
+# misc
+*.tsbuildinfo
+.turbo/

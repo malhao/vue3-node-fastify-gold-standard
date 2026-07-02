@@ -6,13 +6,13 @@ They're designed to be used **together**: same core libraries, same conventions,
 
 ## The documents
 
-| File | Use it for | One-liner |
-|------|-----------|-----------|
-| [`nodejs-master-prompt.md`](./nodejs-master-prompt.md) | The API / backend | Node.js + TypeScript + Prisma/PostgreSQL, layered + feature-based, Zod-driven OpenAPI. |
-| [`vue3-master-prompt.md`](./vue3-master-prompt.md) | Frontend — **Vite SPA** | Vue 3 SPA for authenticated apps where SEO doesn't matter. |
-| [`nuxt-master-prompt.md`](./nuxt-master-prompt.md) | Frontend — **Nuxt** | Nuxt 4 when you need SSR/SEO or a server/BFF layer. |
-| [`shared-api-conventions.md`](./shared-api-conventions.md) | The contract | Response envelope, error codes, pagination, auth, versioning, trace/correlation propagation. **Authoritative** — both sides conform to it. |
-| [`observability.md`](./observability.md) | Logs, metrics, traces | Vendor-neutral OpenTelemetry standard across all tiers. Instrument once, choose the backend vendor later. |
+| File                                                       | Use it for              | One-liner                                                                                                                                  |
+| ---------------------------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| [`nodejs-master-prompt.md`](./nodejs-master-prompt.md)     | The API / backend       | Node.js + TypeScript + Prisma/PostgreSQL, layered + feature-based, Zod-driven OpenAPI.                                                     |
+| [`vue3-master-prompt.md`](./vue3-master-prompt.md)         | Frontend — **Vite SPA** | Vue 3 SPA for authenticated apps where SEO doesn't matter.                                                                                 |
+| [`nuxt-master-prompt.md`](./nuxt-master-prompt.md)         | Frontend — **Nuxt**     | Nuxt 4 when you need SSR/SEO or a server/BFF layer.                                                                                        |
+| [`shared-api-conventions.md`](./shared-api-conventions.md) | The contract            | Response envelope, error codes, pagination, auth, versioning, trace/correlation propagation. **Authoritative** — both sides conform to it. |
+| [`observability.md`](./observability.md)                   | Logs, metrics, traces   | Vendor-neutral OpenTelemetry standard across all tiers. Instrument once, choose the backend vendor later.                                  |
 
 ## Which frontend prompt?
 
