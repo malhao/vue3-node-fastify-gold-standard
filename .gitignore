@@ -4,6 +4,7 @@ build/
 .output/
 .nuxt/
 coverage/
+**/generated/
 
 # env
 .env
