@@ -6,3 +6,4 @@ allowBuilds:
   esbuild: true
   prisma: true
   simple-git-hooks: true
+  vue-demi: true

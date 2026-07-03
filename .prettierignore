@@ -5,3 +5,9 @@ build
 .nuxt
 coverage
 pnpm-lock.yaml
+
+# generated — not hand-maintained
+apps/api/openapi.json
+packages/api-client/src/client.ts
+packages/api-client/src/client/**
+packages/api-client/src/models/**

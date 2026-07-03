@@ -63,6 +63,26 @@ export function registerErrorHandler(app: FastifyInstance): void {
         return;
       }
 
+      // Fastify's own framework errors (malformed JSON, empty JSON body, payload too
+      // large, etc.) already carry a client-facing 4xx statusCode — pass it through
+      // rather than collapsing every non-AppError into a 500.
+      if (
+        'statusCode' in error &&
+        typeof error.statusCode === 'number' &&
+        error.statusCode >= 400 &&
+        error.statusCode < 500
+      ) {
+        send(reply, error.statusCode, {
+          error: {
+            code: 'VALIDATION_FAILED',
+            message: error.message,
+            details: [],
+            requestId,
+          },
+        });
+        return;
+      }
+
       // Unexpected programmer/system error: log with full context, never leak internals to the client.
       request.log.error({ err: error }, 'Unhandled error');
       send(reply, 500, {

@@ -1,0 +1,43 @@
+<script setup lang="ts">
+import { reactive, useTemplateRef } from 'vue'
+import type { Form, FormSubmitEvent } from '@nuxt/ui'
+import { PostApiV1TasksBody } from '@gold-standard/api-client'
+import type { z } from 'zod'
+import { useCreateTaskMutation } from '../task.queries'
+
+type CreateTaskInput = z.infer<typeof PostApiV1TasksBody>
+
+const { mutateAsync, isLoading } = useCreateTaskMutation()
+const form = useTemplateRef<Form<CreateTaskInput>>('form')
+
+const state = reactive<Partial<CreateTaskInput>>({
+  title: undefined,
+  dueDate: undefined,
+})
+
+async function onSubmit(event: FormSubmitEvent<CreateTaskInput>) {
+  await mutateAsync(event.data)
+  state.title = undefined
+  state.dueDate = undefined
+  form.value?.clear()
+}
+</script>
+
+<template>
+  <UForm
+    ref="form"
+    :schema="PostApiV1TasksBody"
+    :state="state"
+    class="flex items-start gap-2"
+    @submit="onSubmit"
+  >
+    <UFormField name="title" class="flex-1">
+      <UInput
+        v-model="state.title"
+        placeholder="What needs doing?"
+        data-testid="task-title-input"
+      />
+    </UFormField>
+    <UButton type="submit" :loading="isLoading" data-testid="task-submit"> Add task </UButton>
+  </UForm>
+</template>

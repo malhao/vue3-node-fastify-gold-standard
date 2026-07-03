@@ -15,6 +15,7 @@ import { registerErrorHandler } from './shared/middleware/error-handler.js';
 import { registerHealthRoutes } from './shared/http/health.routes.js';
 import { loggerOptions } from './shared/logger/index.js';
 import { registerOpenApi } from './shared/openapi/register.js';
+import { registerTaskRoutes } from './modules/tasks/task.routes.js';
 
 /** Builds (but does not start) the Fastify app — importable by tests without binding a port. */
 export async function buildApp(): Promise<FastifyInstance> {
@@ -30,7 +31,10 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(fastifyZodOpenApiPlugin);
 
   await app.register(fastifyHelmet);
-  await app.register(fastifyCors, { origin: config.CORS_ORIGIN });
+  await app.register(fastifyCors, {
+    origin: config.CORS_ORIGIN,
+    methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+  });
   await app.register(fastifyRateLimit, { max: 100, timeWindow: '1 minute' });
 
   app.addHook('onSend', async (request, reply, payload) => {
@@ -42,7 +46,7 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   await registerOpenApi(app);
   await registerHealthRoutes(app);
-  // Feature module routes (e.g. modules/tasks) are registered here as they're added.
+  await app.register(registerTaskRoutes, { prefix: '/api/v1/tasks' });
 
   return app;
 }
