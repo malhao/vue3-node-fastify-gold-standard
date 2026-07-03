@@ -33,4 +33,70 @@ jobs:
       - run: pnpm audit --audit-level=high
         continue-on-error: true
 
-  # Test job is added in Slice 4 once Vitest/Testcontainers/Playwright are wired up.
+  test:
+    runs-on: ubuntu-latest
+    # Docker is preinstalled and running on GitHub-hosted runners, so both the Postgres
+    # service below and the API integration test's own Testcontainers work unmodified.
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: gold_standard
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # .env.example's defaults already match this job's Postgres service (port 5432,
+      # db `gold_standard`) and dev ports, so no per-step env overrides are needed.
+      - name: Create .env
+        run: cp .env.example .env
+
+      - name: Install Playwright browsers
+        run: pnpm --filter web exec playwright install --with-deps chromium
+
+      - name: Apply database migrations
+        run: pnpm --filter api exec prisma migrate deploy
+
+      - name: API unit tests
+        run: pnpm --filter api run test:unit
+
+      - name: API integration tests (Testcontainers)
+        run: pnpm --filter api run test:integration
+
+      - name: Web unit/component tests
+        run: pnpm --filter web run test
+
+      - name: Export OpenAPI spec and regenerate client (drift check)
+        run: |
+          pnpm --filter api run openapi:export
+          pnpm --filter @gold-standard/api-client run generate
+          git diff --exit-code -- packages/api-client apps/api/openapi.json
+
+      - name: Build API
+        run: pnpm --filter api run build
+
+      - name: Start API
+        run: pnpm --filter api run start &
+
+      - name: Wait for API
+        run: timeout 30 bash -c 'until curl -sf http://localhost:3000/healthz; do sleep 1; done'
+
+      - name: Web E2E tests (Playwright)
+        run: pnpm --filter web run test:e2e

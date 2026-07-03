@@ -29,9 +29,12 @@ function toggleDone(id: string, done: boolean) {
     <ul v-else class="divide-y divide-default" data-testid="task-list">
       <li v-for="task in data?.data" :key="task.id" class="flex items-center gap-3 py-2">
         <UCheckbox :model-value="task.done" @update:model-value="toggleDone(task.id, task.done)" />
-        <span class="flex-1" :class="{ 'line-through text-muted': task.done }">{{
-          task.title
-        }}</span>
+        <span
+          class="flex-1"
+          data-testid="task-title"
+          :class="{ 'line-through text-muted': task.done }"
+          >{{ task.title }}</span
+        >
         <UButton
           icon="i-lucide-trash-2"
           color="neutral"

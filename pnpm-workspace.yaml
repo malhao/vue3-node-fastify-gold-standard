@@ -3,7 +3,11 @@ packages:
   - 'packages/*'
 allowBuilds:
   '@prisma/engines': true
+  cpu-features: true
   esbuild: true
+  msw: true
   prisma: true
+  protobufjs: true
   simple-git-hooks: true
+  ssh2: true
   vue-demi: true
