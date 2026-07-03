@@ -1,0 +1,31 @@
+# Local dev Collector: receives OTLP from the API (and, if enabled, the browser) and
+# prints it to its own stdout. Swap/add exporters here to point at a real backend later
+# (Jaeger/Tempo/Prometheus/Grafana/Loki, or a SaaS) — app code never changes.
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+        cors:
+          allowed_origins:
+            - 'http://localhost:5173'
+
+processors:
+  batch: {}
+
+exporters:
+  debug:
+    verbosity: detailed
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug]

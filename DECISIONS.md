@@ -26,3 +26,32 @@ alternatives. Update this file whenever such a choice is made or revisited.
   imports backend Zod schemas directly — its client is generated from the OpenAPI spec — so a
   shared schemas package would have no consumer today. Revisit if a schema genuinely needs to be
   hand-shared outside the generated-client flow.
+
+## 2026-07-03 — Observability (Slice 5)
+
+- **Fastify instrumentation:** `@fastify/otel` (Fastify-team-maintained), not
+  `@opentelemetry/instrumentation-fastify` — the latter was removed upstream (March 2026) in favor
+  of `@fastify/otel`. Registered as a normal plugin (`fastifyOtelInstrumentation.plugin()`) rather
+  than via its `registerOnInitialization` auto-patch mode, because that mode (like generic
+  http/pg auto-instrumentation) relies on Node's require-hook mechanism, which under this
+  project's pure-ESM setup needs `--experimental-loader=@opentelemetry/instrumentation/hook.mjs` —
+  fragile to stack with `tsx`'s own dev-time loader. Manual plugin registration has no such
+  dependency and is verified working (see `apps/api/src/instrumentation.ts`).
+- **DB spans:** no `@opentelemetry/instrumentation-pg` wired in, for the same ESM/require-hook
+  reason above. Covered instead with manual spans around each `task.service.ts` method
+  (`withSpan()`), which is what `observability.md` §3 asks for regardless ("wrap meaningful
+  operations in explicit spans"). Add the experimental loader flag to the production `start`
+  script if full auto-patched `http`/`pg` spans are wanted later — `getNodeAutoInstrumentations()`
+  is already in the SDK config and will pick them up once the loader is present.
+- **Frontend browser tracing:** implemented the real `@opentelemetry/sdk-trace-web` +
+  `FetchInstrumentation` setup (not a hand-rolled `traceparent` header) specifically to get
+  correct W3C Trace Context propagation for free. Kept intentionally minimal — no document-load
+  or user-interaction instrumentation — since `observability.md` §4 marks fuller browser tracing
+  as optional and Core Web Vitals as the higher-priority item.
+- **Frontend Web Vitals sink:** reports to `console.info` for now (clearly the forwarding seam,
+  not real telemetry) — there's no metrics-ingestion endpoint or RUM backend wired up yet. Swap
+  the `report()` function in `apps/web/src/shared/observability/web-vitals.ts` for a real forward
+  (Collector OTLP-over-HTTP-JSON, or an RUM SDK) when one exists.
+- Verified end-to-end locally: a browser-originated `traceparent` produces one `trace_id` visible
+  in the backend's correlated Pino logs and in the local OTel Collector's `debug` exporter output,
+  alongside the manual `tasks.*` spans and the `http.server.request.count`/`.duration` RED metrics.

@@ -1,3 +1,6 @@
+// Must stay the first import — starts the OTel SDK before anything it instruments loads.
+import './instrumentation.js';
+
 import { buildApp } from './app.js';
 import { config } from './shared/config/env.js';
 import { prisma } from './shared/db/prisma.js';
