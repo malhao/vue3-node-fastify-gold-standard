@@ -1,3 +1,4 @@
+import { AppError } from '../../shared/errors/app-error.js';
 import { prisma } from '../../shared/db/prisma.js';
 import type { Task } from '../../generated/prisma/client.js';
 import type { CreateTaskInput, UpdateTaskInput } from './task.schemas.js';
@@ -12,15 +13,28 @@ function encodeCursor(task: Pick<Task, 'id' | 'createdAt'>): string {
   return Buffer.from(JSON.stringify(cursor)).toString('base64url');
 }
 
+/** The cursor is opaque client input; a garbage value is a malformed request (400),
+ * not a server fault — decode failures must surface as an enveloped 400, never a 500. */
+function malformedCursor(): AppError {
+  return new AppError(400, 'VALIDATION_FAILED', 'The pagination cursor is malformed.', [
+    { path: 'cursor', message: 'Malformed pagination cursor.' },
+  ]);
+}
+
 function decodeCursor(raw: string): Cursor {
-  const parsed: unknown = JSON.parse(Buffer.from(raw, 'base64url').toString('utf8'));
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(Buffer.from(raw, 'base64url').toString('utf8'));
+  } catch {
+    throw malformedCursor();
+  }
   if (
     typeof parsed !== 'object' ||
     parsed === null ||
     !('createdAt' in parsed) ||
     !('id' in parsed)
   ) {
-    throw new Error('Malformed pagination cursor');
+    throw malformedCursor();
   }
   return parsed as Cursor;
 }
