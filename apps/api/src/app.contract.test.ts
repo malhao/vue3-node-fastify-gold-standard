@@ -18,12 +18,27 @@ afterAll(async () => {
   await app.close();
 });
 
+// The Tasks routes require a bearer token (see vitest.config env API_AUTH_TOKEN).
+const AUTH = { authorization: 'Bearer test-token' };
+
 describe('response contract', () => {
+  it('returns 401 for a Tasks request without a valid bearer token', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/v1/tasks',
+      remoteAddress: '10.0.0.4',
+    });
+
+    expect(res.statusCode).toBe(401);
+    expect(res.json().error.code).toBe('UNAUTHENTICATED');
+  });
+
   it('returns a 400 enveloped error for a malformed pagination cursor', async () => {
     const res = await app.inject({
       method: 'GET',
       url: '/api/v1/tasks?cursor=not-a-real-cursor',
       remoteAddress: '10.0.0.1',
+      headers: AUTH,
     });
 
     expect(res.statusCode).toBe(400);

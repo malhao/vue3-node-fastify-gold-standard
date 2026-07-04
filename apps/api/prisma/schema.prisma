@@ -9,14 +9,17 @@ datasource db {
 
 model Task {
   id        String    @id @default(uuid())
+  // Owner (the authenticated principal). No User table yet — auth is a stub — but every
+  // task is owned, and all queries are scoped by this so the client can't reach others' tasks.
+  userId    String
   title     String
   done      Boolean   @default(false)
   dueDate   DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  // Keyset pagination orders and filters on (createdAt, id); this composite index
-  // lets Postgres serve each page from an index range instead of sorting the table.
-  @@index([createdAt, id])
+  // Keyset pagination is per-owner and orders/filters on (createdAt, id); this composite
+  // index lets Postgres serve each page from an index range instead of sorting.
+  @@index([userId, createdAt, id])
   @@map("tasks")
 }

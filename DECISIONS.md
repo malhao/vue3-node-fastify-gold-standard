@@ -55,3 +55,23 @@ alternatives. Update this file whenever such a choice is made or revisited.
 - Verified end-to-end locally: a browser-originated `traceparent` produces one `trace_id` visible
   in the backend's correlated Pino logs and in the local OTel Collector's `debug` exporter output,
   alongside the manual `tasks.*` spans and the `http.server.request.count`/`.duration` RED metrics.
+
+## 2026-07-04 — Authentication & authorization (stub)
+
+`shared-api-conventions.md` §5 mandates real auth (short-lived tokens via httpOnly cookies +
+refresh) plus **server-side object-level ownership**. We implemented the second half for real and
+**stubbed the first**, deliberately, to keep the identity system out of scope while still closing
+the object-level-authorization gap (the higher-risk one).
+
+- **Stub authentication:** an `onRequest` hook on the Tasks plugin requires a static bearer token
+  (`API_AUTH_TOKEN`); a valid token resolves to one hardcoded principal (`DEV_USER_ID`), missing/
+  invalid → `401 UNAUTHENTICATED`. The frontend sends the token via `VITE_API_TOKEN` in the
+  generated client's HTTP wrapper. This is **not** production auth — see `shared/auth/auth.ts`.
+  Replace `registerAuth` with real verification (resolve the user from a verified JWT/session);
+  nothing downstream changes, since it only depends on `request.userId`.
+- **Real authorization:** every Tasks query is scoped by `request.userId` in the repository. A task
+  owned by another user is indistinguishable from a missing one (`404`) — read, update, and delete
+  all 404 — which also avoids leaking existence. Added `Task.userId` + an owner-first index
+  `@@index([userId, createdAt, id])`.
+- **Not documented in OpenAPI yet:** the bearer requirement isn't expressed as an OpenAPI security
+  scheme (would be the next step for a real auth story); the contract/DTOs are otherwise unchanged.

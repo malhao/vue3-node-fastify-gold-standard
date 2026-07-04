@@ -5,6 +5,8 @@ const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(3000),
   DATABASE_URL: z.url(),
   CORS_ORIGIN: z.string().min(1),
+  // Static bearer token accepted by the (stub) auth layer — see shared/auth.
+  API_AUTH_TOKEN: z.string().min(1),
   OTEL_EXPORTER_OTLP_ENDPOINT: z.url().optional(),
   OTEL_SERVICE_NAME: z.string().default('api'),
 });

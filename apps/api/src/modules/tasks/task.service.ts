@@ -31,9 +31,13 @@ function toOutput(task: Task): TaskOutput {
 /** Business logic for tasks — framework-agnostic, depends only on the injected repository. */
 export function createTaskService(repository: TaskRepository = taskRepository) {
   return {
-    list(query: ListTasksQuery) {
+    list(userId: string, query: ListTasksQuery) {
       return withSpan('tasks.list', async () => {
-        const { tasks, hasMore, nextCursor } = await repository.findMany(query.limit, query.cursor);
+        const { tasks, hasMore, nextCursor } = await repository.findMany(
+          userId,
+          query.limit,
+          query.cursor,
+        );
         return {
           data: tasks.map(toOutput),
           meta: { pagination: { nextCursor, hasMore, limit: query.limit } },
@@ -41,33 +45,35 @@ export function createTaskService(repository: TaskRepository = taskRepository) {
       });
     },
 
-    getById(id: string): Promise<TaskOutput> {
+    getById(userId: string, id: string): Promise<TaskOutput> {
       return withSpan('tasks.getById', async () => {
-        const task = await repository.findById(id);
+        const task = await repository.findById(userId, id);
         if (!task) throw new NotFoundError(`Task ${id} was not found.`);
         return toOutput(task);
       });
     },
 
-    create(input: CreateTaskInput): Promise<TaskOutput> {
+    create(userId: string, input: CreateTaskInput): Promise<TaskOutput> {
       return withSpan('tasks.create', async () => {
-        const task = await repository.create(input);
+        const task = await repository.create(userId, input);
         return toOutput(task);
       });
     },
 
-    update(id: string, input: UpdateTaskInput): Promise<TaskOutput> {
+    update(userId: string, id: string, input: UpdateTaskInput): Promise<TaskOutput> {
       return withSpan('tasks.update', async () => {
-        const existing = await repository.findById(id);
+        // Ownership check: findById is owner-scoped, so a task owned by someone else
+        // is treated as missing and never updated.
+        const existing = await repository.findById(userId, id);
         if (!existing) throw new NotFoundError(`Task ${id} was not found.`);
         const task = await repository.update(id, input);
         return toOutput(task);
       });
     },
 
-    remove(id: string): Promise<void> {
+    remove(userId: string, id: string): Promise<void> {
       return withSpan('tasks.remove', async () => {
-        const existing = await repository.findById(id);
+        const existing = await repository.findById(userId, id);
         if (!existing) throw new NotFoundError(`Task ${id} was not found.`);
         await repository.remove(id);
       });

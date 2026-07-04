@@ -41,6 +41,7 @@ function decodeCursor(raw: string): Cursor {
 
 export const taskRepository = {
   async findMany(
+    userId: string,
     limit: number,
     cursor?: string,
   ): Promise<{ tasks: Task[]; hasMore: boolean; nextCursor: string | null }> {
@@ -49,14 +50,15 @@ export const taskRepository = {
     const tasks = await prisma.task.findMany({
       take: limit + 1,
       orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
-      ...(decoded && {
-        where: {
+      where: {
+        userId,
+        ...(decoded && {
           OR: [
             { createdAt: { gt: new Date(decoded.createdAt) } },
             { createdAt: new Date(decoded.createdAt), id: { gt: decoded.id } },
           ],
-        },
-      }),
+        }),
+      },
     });
 
     const hasMore = tasks.length > limit;
@@ -70,13 +72,16 @@ export const taskRepository = {
     };
   },
 
-  findById(id: string): Promise<Task | null> {
-    return prisma.task.findUnique({ where: { id } });
+  // Scoped by owner: a task belonging to another user is simply "not found" (404),
+  // which also avoids leaking the existence of other users' resources.
+  findById(userId: string, id: string): Promise<Task | null> {
+    return prisma.task.findFirst({ where: { id, userId } });
   },
 
-  create(input: CreateTaskInput): Promise<Task> {
+  create(userId: string, input: CreateTaskInput): Promise<Task> {
     return prisma.task.create({
       data: {
+        userId,
         title: input.title,
         dueDate: input.dueDate ? new Date(input.dueDate) : null,
       },

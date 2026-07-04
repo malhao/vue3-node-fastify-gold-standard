@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import type { FastifyZodOpenApiSchema, FastifyZodOpenApiTypeProvider } from 'fastify-zod-openapi';
 
+import { registerAuth } from '../../shared/auth/auth.js';
 import { taskController } from './task.controller.js';
 import {
   createTaskSchema,
@@ -14,6 +15,9 @@ import {
 const json = (schema: object) => ({ content: { 'application/json': { schema } } });
 
 export async function registerTaskRoutes(app: FastifyInstance): Promise<void> {
+  // Encapsulated to this plugin: every Tasks route requires a valid bearer token.
+  registerAuth(app);
+
   const server = app.withTypeProvider<FastifyZodOpenApiTypeProvider>();
 
   server.route({

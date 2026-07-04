@@ -45,11 +45,16 @@ function resolveUrl(url: string): string {
 }
 
 export async function http<T>(url: string, options: RequestInit = {}): Promise<T> {
-  // Only set Content-Type when there's a body — Fastify rejects an empty body
-  // declared as JSON (e.g. DELETE requests) with FST_ERR_CTP_EMPTY_JSON_BODY.
-  const headers: HeadersInit = options.body
-    ? { 'Content-Type': 'application/json', ...options.headers }
-    : (options.headers ?? {});
+  const token = import.meta.env['VITE_API_TOKEN'] as string | undefined;
+  const headers: HeadersInit = {
+    // Only set Content-Type when there's a body — Fastify rejects an empty body
+    // declared as JSON (e.g. DELETE requests) with FST_ERR_CTP_EMPTY_JSON_BODY.
+    ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+    // Stub auth: a static dev bearer token. Swap for a real credential flow
+    // (httpOnly cookie / token from an auth store) when the backend gets real auth.
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...options.headers,
+  };
 
   const response = await fetch(resolveUrl(url), { ...options, headers });
 

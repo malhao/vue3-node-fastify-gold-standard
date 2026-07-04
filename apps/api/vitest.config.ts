@@ -8,6 +8,7 @@ export default defineConfig({
     env: {
       DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/gold_standard_test',
       CORS_ORIGIN: 'http://localhost:5173',
+      API_AUTH_TOKEN: 'test-token',
     },
   },
 });
