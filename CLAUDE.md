@@ -96,7 +96,7 @@ Ask me (or record the choice in `DECISIONS.md`) rather than assuming:
 ## Working agreement
 
 - Run **typecheck + lint + tests** before declaring any slice done; a slice isn't finished until it's green.
-- **Every new test must fail first.** Before wiring up (or against already-written) code, confirm the test is **red** for the right reason — remove/break the implementation and watch it fail — then make it green. A test that passes without the code under test proves nothing.
+- **Test before implementation (strict TDD).** Write the test first, before the code under test exists. Run it and watch it fail — **red for the right reason** (asserting the intended behavior, not erroring on a typo or missing import). Only then write the implementation to make it green. Don't write the code first and back-fill a test; a test that never failed proves nothing.
 - **Bookend every piece of work with a short summary.** Before building/changing/documenting anything, print a brief note of what you're about to do; after, print a brief note of what you did. Keep both to a few lines — no walls of text.
 - Keep observability and config **vendor-neutral** (only the Collector config / `OTEL_*` env knows a vendor).
 - Validate at boundaries with Zod; derive types with `z.infer`; never hand-maintain parallel types.
