@@ -96,6 +96,7 @@ Ask me (or record the choice in `DECISIONS.md`) rather than assuming:
 ## Working agreement
 
 - Run **typecheck + lint + tests** before declaring any slice done; a slice isn't finished until it's green.
+- **Bookend every piece of work with a short summary.** Before building/changing/documenting anything, print a brief note of what you're about to do; after, print a brief note of what you did. Keep both to a few lines — no walls of text.
 - Keep observability and config **vendor-neutral** (only the Collector config / `OTEL_*` env knows a vendor).
 - Validate at boundaries with Zod; derive types with `z.infer`; never hand-maintain parallel types.
 - Match the specs' **proportionality** principle — don't over-build small utilities.

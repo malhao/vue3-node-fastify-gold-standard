@@ -6,7 +6,16 @@ import baseConfig from './packages/config/eslint/base.js';
 export default [
   ...baseConfig,
   {
-    files: ['*.js', '*.mjs', '*.cjs', '*.ts'],
+    files: ['*.js', '*.mjs', '*.cjs', '*.ts', 'scripts/**/*.{js,mjs,cjs,ts}'],
+    languageOptions: {
+      // Root-level tooling scripts run under Node. `globals` isn't a dependency,
+      // so declare the handful these scripts actually use.
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+        URL: 'readonly',
+      },
+    },
   },
   {
     ignores: ['apps/**', 'packages/**'],
