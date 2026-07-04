@@ -1,8 +1,8 @@
-import { render, screen, waitFor } from '@testing-library/vue'
+import { fireEvent, render, screen, waitFor } from '@testing-library/vue'
 import { createPinia } from 'pinia'
 import { PiniaColada } from '@pinia/colada'
 import ui from '@nuxt/ui/vue-plugin'
-import { HttpResponse, http } from 'msw'
+import { HttpResponse, delay, http } from 'msw'
 import { describe, expect, it } from 'vitest'
 import { server } from '../../../test/msw/server'
 import { API_ORIGIN } from '../../../test/msw/handlers'
@@ -13,6 +13,29 @@ function renderTaskList() {
     global: { plugins: [createPinia(), PiniaColada, ui] },
   })
 }
+
+const TASK = {
+  id: '11111111-1111-4111-8111-111111111111',
+  title: 'Write the report',
+  done: false,
+  dueDate: null,
+  createdAt: '2026-01-01T00:00:00.000Z',
+  updatedAt: '2026-01-01T00:00:00.000Z',
+}
+
+const listResponse = (tasks: unknown[]) =>
+  HttpResponse.json({
+    data: tasks,
+    meta: { pagination: { nextCursor: null, hasMore: false, limit: 20 } },
+  })
+
+const serverError = () =>
+  new HttpResponse(
+    JSON.stringify({
+      error: { code: 'INTERNAL_ERROR', message: 'Boom', details: [], requestId: 'r1' },
+    }),
+    { status: 500 },
+  )
 
 describe('TaskList', () => {
   it('shows the empty state when there are no tasks', async () => {
@@ -68,5 +91,90 @@ describe('TaskList', () => {
     await waitFor(() => {
       expect(screen.getByTestId('tasks-error')).toBeInTheDocument()
     })
+  })
+
+  it('checks the box optimistically before the update request resolves', async () => {
+    server.use(
+      http.get(`${API_ORIGIN}/api/v1/tasks`, () => listResponse([{ ...TASK }])),
+      // Never resolves — so a checked box can only come from the optimistic update.
+      http.patch(`${API_ORIGIN}/api/v1/tasks/:id`, async () => {
+        await delay('infinite')
+      }),
+    )
+
+    renderTaskList()
+    const checkbox = await screen.findByRole('checkbox')
+    expect(checkbox).not.toBeChecked()
+
+    await fireEvent.click(checkbox)
+
+    await waitFor(() => expect(checkbox).toBeChecked())
+  })
+
+  it('reverts the checkbox when the update request fails', async () => {
+    server.use(
+      http.get(`${API_ORIGIN}/api/v1/tasks`, () => listResponse([{ ...TASK }])),
+      http.patch(`${API_ORIGIN}/api/v1/tasks/:id`, async () => {
+        await delay(30)
+        return serverError()
+      }),
+    )
+
+    renderTaskList()
+    const checkbox = await screen.findByRole('checkbox')
+
+    // Hang the reconcile refetch so only onError's rollback can revert the box —
+    // otherwise a truthful refetch would mask a missing rollback.
+    server.use(
+      http.get(`${API_ORIGIN}/api/v1/tasks`, async () => {
+        await delay('infinite')
+      }),
+    )
+
+    await fireEvent.click(checkbox)
+
+    await waitFor(() => expect(checkbox).toBeChecked()) // optimistic apply
+    await waitFor(() => expect(checkbox).not.toBeChecked()) // rolled back on error
+  })
+
+  it('removes the row optimistically before the delete request resolves', async () => {
+    server.use(
+      http.get(`${API_ORIGIN}/api/v1/tasks`, () => listResponse([{ ...TASK }])),
+      http.delete(`${API_ORIGIN}/api/v1/tasks/:id`, async () => {
+        await delay('infinite')
+      }),
+    )
+
+    renderTaskList()
+    await screen.findByText('Write the report')
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Delete task' }))
+
+    await waitFor(() => expect(screen.queryByText('Write the report')).not.toBeInTheDocument())
+  })
+
+  it('restores the row when the delete request fails', async () => {
+    server.use(
+      http.get(`${API_ORIGIN}/api/v1/tasks`, () => listResponse([{ ...TASK }])),
+      http.delete(`${API_ORIGIN}/api/v1/tasks/:id`, async () => {
+        await delay(30)
+        return serverError()
+      }),
+    )
+
+    renderTaskList()
+    await screen.findByText('Write the report')
+
+    // Hang the reconcile refetch so only onError's rollback can bring the row back.
+    server.use(
+      http.get(`${API_ORIGIN}/api/v1/tasks`, async () => {
+        await delay('infinite')
+      }),
+    )
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Delete task' }))
+
+    await waitFor(() => expect(screen.queryByText('Write the report')).not.toBeInTheDocument()) // optimistic remove
+    await waitFor(() => expect(screen.getByText('Write the report')).toBeInTheDocument()) // restored on error
   })
 })
