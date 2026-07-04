@@ -188,6 +188,14 @@ describe('TaskList', () => {
     await waitFor(() => expect(screen.getByText('Write the report')).toBeInTheDocument()) // restored on error
   })
 
+  it('gives each checkbox an accessible name referencing its task', async () => {
+    server.use(http.get(`${API_ORIGIN}/api/v1/tasks`, () => listResponse([{ ...TASK }])))
+
+    renderTaskList()
+
+    expect(await screen.findByRole('checkbox', { name: /write the report/i })).toBeInTheDocument()
+  })
+
   it('shows an error toast when a delete fails', async () => {
     server.use(
       http.get(`${API_ORIGIN}/api/v1/tasks`, () => listResponse([{ ...TASK }])),

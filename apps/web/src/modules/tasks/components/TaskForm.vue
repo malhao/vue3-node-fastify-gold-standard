@@ -40,6 +40,7 @@ async function onSubmit(event: FormSubmitEvent<CreateTaskInput>) {
       <UInput
         v-model="state.title"
         placeholder="What needs doing?"
+        aria-label="Task title"
         data-testid="task-title-input"
       />
     </UFormField>

@@ -23,6 +23,11 @@ function renderTaskForm() {
 }
 
 describe('TaskForm', () => {
+  it('gives the title input an accessible name', () => {
+    renderTaskForm()
+    expect(screen.getByRole('textbox', { name: /task title/i })).toBeInTheDocument()
+  })
+
   it('shows an error toast when creating a task fails', async () => {
     server.use(
       http.post(
