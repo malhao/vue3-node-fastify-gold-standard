@@ -30,6 +30,19 @@ function send(reply: FastifyReply, statusCode: number, body: ErrorEnvelope): voi
 
 /** Centralized error handler — the only place that maps errors onto the API's response envelope. */
 export function registerErrorHandler(app: FastifyInstance): void {
+  // Unknown routes: emit the same envelope rather than Fastify's default
+  // `{ message, error, statusCode }`, so 404s conform to the API contract too.
+  app.setNotFoundHandler((request: FastifyRequest, reply: FastifyReply) => {
+    send(reply, 404, {
+      error: {
+        code: 'RESOURCE_NOT_FOUND',
+        message: 'The requested resource was not found.',
+        details: [],
+        requestId: request.id,
+      },
+    });
+  });
+
   app.setErrorHandler(
     (error: FastifyError | Error, request: FastifyRequest, reply: FastifyReply) => {
       const requestId = request.id;

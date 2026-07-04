@@ -34,4 +34,17 @@ describe('response contract', () => {
       expect.arrayContaining([expect.objectContaining({ path: 'cursor' })]),
     );
   });
+
+  it('returns a 404 enveloped error for an unknown route', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/v1/does-not-exist',
+      remoteAddress: '10.0.0.2',
+    });
+
+    expect(res.statusCode).toBe(404);
+    const body = res.json();
+    expect(body.error.code).toBe('RESOURCE_NOT_FOUND');
+    expect(body.error.requestId).toBeTruthy();
+  });
 });
