@@ -8,6 +8,7 @@
     "build": "tsc -p tsconfig.build.json",
     "start": "node --env-file=../../.env dist/server.js",
     "typecheck": "tsc --noEmit",
+    "postinstall": "prisma generate",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "pnpm run test:unit && pnpm run test:integration",
