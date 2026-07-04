@@ -16,10 +16,15 @@ const state = reactive<Partial<CreateTaskInput>>({
 })
 
 async function onSubmit(event: FormSubmitEvent<CreateTaskInput>) {
-  await mutateAsync(event.data)
-  state.title = undefined
-  state.dueDate = undefined
-  form.value?.clear()
+  try {
+    await mutateAsync(event.data)
+    state.title = undefined
+    state.dueDate = undefined
+    form.value?.clear()
+  } catch {
+    // The failure is surfaced by the mutation's onError toast; keep the user's input
+    // so they can retry rather than losing what they typed.
+  }
 }
 </script>
 

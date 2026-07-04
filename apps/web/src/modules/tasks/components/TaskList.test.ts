@@ -3,10 +3,20 @@ import { createPinia } from 'pinia'
 import { PiniaColada } from '@pinia/colada'
 import ui from '@nuxt/ui/vue-plugin'
 import { HttpResponse, delay, http } from 'msw'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { server } from '../../../test/msw/server'
 import { API_ORIGIN } from '../../../test/msw/handlers'
 import TaskList from './TaskList.vue'
+
+// Assert error feedback by spying on the toast rather than rendering UApp's teleported
+// toast host in jsdom (brittle). Only our mutation code calls useToast, so this is precise.
+const { toastAdd } = vi.hoisted(() => ({ toastAdd: vi.fn<(toast: unknown) => void>() }))
+vi.mock('@nuxt/ui/composables', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@nuxt/ui/composables')>()),
+  useToast: () => ({ add: toastAdd, remove: vi.fn<() => void>(), update: vi.fn<() => void>(), clear: vi.fn<() => void>() }),
+}))
+
+beforeEach(() => toastAdd.mockClear())
 
 function renderTaskList() {
   return render(TaskList, {
@@ -176,5 +186,23 @@ describe('TaskList', () => {
 
     await waitFor(() => expect(screen.queryByText('Write the report')).not.toBeInTheDocument()) // optimistic remove
     await waitFor(() => expect(screen.getByText('Write the report')).toBeInTheDocument()) // restored on error
+  })
+
+  it('shows an error toast when a delete fails', async () => {
+    server.use(
+      http.get(`${API_ORIGIN}/api/v1/tasks`, () => listResponse([{ ...TASK }])),
+      http.delete(`${API_ORIGIN}/api/v1/tasks/:id`, () => serverError()),
+    )
+
+    renderTaskList()
+    await screen.findByText('Write the report')
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Delete task' }))
+
+    await waitFor(() =>
+      expect(toastAdd).toHaveBeenCalledWith(
+        expect.objectContaining({ title: expect.stringMatching(/couldn't delete/i) }),
+      ),
+    )
   })
 })

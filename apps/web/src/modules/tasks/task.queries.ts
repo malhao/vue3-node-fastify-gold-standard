@@ -1,5 +1,10 @@
 import { useMutation, useQuery, useQueryCache } from '@pinia/colada'
+// Import from the composables entry, NOT '@nuxt/ui' — the package root resolves to the
+// Nuxt *module* build (dist/module.mjs), which is not browser-safe and breaks app startup
+// when imported as a value. (Type-only imports from '@nuxt/ui' are fine — they're erased.)
+import { useToast } from '@nuxt/ui/composables'
 import {
+  ApiError,
   GetApiV1TasksResponse,
   PatchApiV1TasksIdBody,
   PatchApiV1TasksIdResponse,
@@ -18,6 +23,11 @@ type TasksResponse = z.infer<typeof GetApiV1TasksResponse>
 
 const TASKS_KEY = ['tasks']
 
+/** The API envelope's `message` is client-safe; fall back to a generic line otherwise. */
+function errorDescription(error: unknown): string {
+  return error instanceof ApiError ? error.message : 'Please try again.'
+}
+
 export function useTasksQuery() {
   return useQuery({
     key: TASKS_KEY,
@@ -27,9 +37,13 @@ export function useTasksQuery() {
 
 export function useCreateTaskMutation() {
   const queryCache = useQueryCache()
+  const toast = useToast()
   return useMutation({
     mutation: async (input: CreateTaskInput) =>
       PostApiV1TasksResponse.parse(await postApiV1Tasks(input)),
+    onError(error) {
+      toast.add({ title: "Couldn't add the task", description: errorDescription(error), color: 'error' })
+    },
     onSettled() {
       void queryCache.invalidateQueries({ key: TASKS_KEY })
     },
@@ -38,6 +52,7 @@ export function useCreateTaskMutation() {
 
 export function useUpdateTaskMutation() {
   const queryCache = useQueryCache()
+  const toast = useToast()
   return useMutation({
     mutation: async ({ id, ...body }: { id: string } & UpdateTaskInput) =>
       PatchApiV1TasksIdResponse.parse(await patchApiV1TasksId(id, body)),
@@ -54,8 +69,9 @@ export function useUpdateTaskMutation() {
       }
       return { previous }
     },
-    onError(_error, _vars, { previous }) {
+    onError(error, _vars, { previous }) {
       if (previous) queryCache.setQueryData(TASKS_KEY, previous)
+      toast.add({ title: "Couldn't update the task", description: errorDescription(error), color: 'error' })
     },
     onSettled() {
       void queryCache.invalidateQueries({ key: TASKS_KEY })
@@ -65,6 +81,7 @@ export function useUpdateTaskMutation() {
 
 export function useDeleteTaskMutation() {
   const queryCache = useQueryCache()
+  const toast = useToast()
   return useMutation({
     mutation: (id: string) => deleteApiV1TasksId(id),
     // Optimistically drop the row so deletion feels immediate.
@@ -79,8 +96,9 @@ export function useDeleteTaskMutation() {
       }
       return { previous }
     },
-    onError(_error, _id, { previous }) {
+    onError(error, _id, { previous }) {
       if (previous) queryCache.setQueryData(TASKS_KEY, previous)
+      toast.add({ title: "Couldn't delete the task", description: errorDescription(error), color: 'error' })
     },
     onSettled() {
       void queryCache.invalidateQueries({ key: TASKS_KEY })
