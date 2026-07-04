@@ -4,7 +4,7 @@ A "gold-standard" full-stack TypeScript monorepo: a **Fastify + Prisma/PostgreSQ
 
 ## Status
 
-Early scaffold stage — the specs and working agreement are in place; the workspace and apps are not yet built. See `CLAUDE.md` for the build plan.
+Built end to end across all five slices in `CLAUDE.md` (workspace, Fastify API, Tasks vertical feature, tests, and OpenTelemetry). The observability **backend** is deliberately deferred — telemetry exports via OTLP to a local Collector and Web Vitals report to the console until a vendor is wired up (see `DECISIONS.md`).
 
 ## Stack
 
@@ -19,4 +19,24 @@ Early scaffold stage — the specs and working agreement are in place; the works
 
 ## Getting started
 
-Not yet scaffolded. Follow the build plan in `CLAUDE.md` (§ "Build in verifiable slices").
+**Prerequisites:** Node 24 (see `.nvmrc`), pnpm 11, and Docker (for PostgreSQL).
+
+```bash
+pnpm install                                    # install; also generates the Prisma client
+cp .env.example .env                            # local config (placeholder values are fine)
+docker compose up -d postgres                   # start PostgreSQL
+pnpm --filter api exec prisma migrate deploy    # apply migrations
+pnpm dev                                         # start both apps (prints where each runs)
+```
+
+Then open:
+
+| Service | URL |
+| --- | --- |
+| Web app (Vue) | http://localhost:5173 |
+| API docs (Scalar) | http://localhost:3000/docs |
+| API health | http://localhost:3000/healthz |
+
+The API has no root route, so http://localhost:3000/ returns 404 by design — use the web app or the endpoints above.
+
+**Common tasks** (run from the repo root): `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`. The API integration tests and E2E need Docker running. To exercise the full telemetry pipeline, also start the Collector: `docker compose up -d`.
