@@ -2,9 +2,11 @@
 
 ## Reporting a Vulnerability
 
-Please report suspected security vulnerabilities privately — do not open a public GitHub issue.
+Please report suspected security vulnerabilities privately — do not open a public GitHub issue. Use
+GitHub's [private vulnerability reporting](https://github.com/malhao/vue3-node-fastify-gold-standard/security/advisories/new)
+(Security → Advisories → "Report a vulnerability").
 
-Email: alex@malhao.net
+Maintainer: https://malhao.net
 
 Include:
 
