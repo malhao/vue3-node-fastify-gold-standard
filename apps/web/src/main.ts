@@ -8,12 +8,15 @@ import ui from '@nuxt/ui/vue-plugin'
 import App from './App.vue'
 import router from './router'
 import { initTracing } from './shared/observability/tracing'
+import { installGlobalErrorHandler } from './shared/observability/error-handler'
 
 // Registered before mount (not deferred like Web Vitals below) so even the first API
 // call — often fired on initial mount — gets a traceparent header propagated to it.
 initTracing()
 
 const app = createApp(App)
+
+installGlobalErrorHandler(app)
 
 app.use(createPinia())
 app.use(PiniaColada)
