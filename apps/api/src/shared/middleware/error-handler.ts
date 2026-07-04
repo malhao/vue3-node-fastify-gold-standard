@@ -1,6 +1,17 @@
 import type { FastifyError, FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 
-import { AppError, type ErrorDetail } from '../errors/app-error.js';
+import { AppError, type ErrorCode, type ErrorDetail } from '../errors/app-error.js';
+
+// Framework errors that already carry a client-facing 4xx status map to the canonical
+// code for that status; anything else (400 malformed JSON, 413 too large, …) is treated
+// as a validation failure.
+const STATUS_TO_CODE: Record<number, ErrorCode> = {
+  401: 'UNAUTHENTICATED',
+  403: 'FORBIDDEN',
+  404: 'RESOURCE_NOT_FOUND',
+  409: 'CONFLICT',
+  429: 'RATE_LIMITED',
+};
 
 /** Fastify sets `code: 'FST_ERR_VALIDATION'` and populates `validation` for schema failures,
  * regardless of validator provider — see fastify-zod-openapi's `RequestValidationError` shape. */
@@ -76,9 +87,10 @@ export function registerErrorHandler(app: FastifyInstance): void {
         return;
       }
 
-      // Fastify's own framework errors (malformed JSON, empty JSON body, payload too
-      // large, etc.) already carry a client-facing 4xx statusCode — pass it through
-      // rather than collapsing every non-AppError into a 500.
+      // Fastify's own framework errors (malformed JSON, payload too large, and
+      // plugin-thrown errors like @fastify/rate-limit's 429) already carry a
+      // client-facing 4xx statusCode — pass it through with the canonical code for
+      // that status rather than collapsing every non-AppError into a 500.
       if (
         'statusCode' in error &&
         typeof error.statusCode === 'number' &&
@@ -87,7 +99,7 @@ export function registerErrorHandler(app: FastifyInstance): void {
       ) {
         send(reply, error.statusCode, {
           error: {
-            code: 'VALIDATION_FAILED',
+            code: STATUS_TO_CODE[error.statusCode] ?? 'VALIDATION_FAILED',
             message: error.message,
             details: [],
             requestId,

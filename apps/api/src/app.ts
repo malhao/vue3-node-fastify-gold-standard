@@ -42,6 +42,8 @@ export async function buildApp(): Promise<FastifyInstance> {
     origin: config.CORS_ORIGIN,
     methods: ['GET', 'POST', 'PATCH', 'DELETE'],
   });
+  // On limit exceeded the plugin throws a 429 that flows through the centralized error
+  // handler, which maps the status to the canonical RATE_LIMITED code and the envelope.
   await app.register(fastifyRateLimit, { max: 100, timeWindow: '1 minute' });
 
   app.addHook('onSend', async (request, reply, payload) => {
