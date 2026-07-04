@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { useTasksQuery, useUpdateTaskMutation, useDeleteTaskMutation } from '../task.queries'
 
-const { data, error, isLoading } = useTasksQuery()
+// `isPending` is true only on the initial load (no data yet); `isLoading` is
+// true on every fetch including background refetches, so using it here would
+// tear the list down and re-show the placeholder on each mutation's refetch.
+const { data, error, isPending } = useTasksQuery()
 const { mutate: updateTask } = useUpdateTaskMutation()
 const { mutate: deleteTask } = useDeleteTaskMutation()
 
@@ -12,7 +15,7 @@ function toggleDone(id: string, done: boolean) {
 
 <template>
   <div>
-    <p v-if="isLoading" data-testid="tasks-loading" class="text-muted">Loading tasks…</p>
+    <p v-if="isPending" data-testid="tasks-loading" class="text-muted">Loading tasks…</p>
 
     <UAlert
       v-else-if="error"
