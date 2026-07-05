@@ -75,3 +75,12 @@ the object-level-authorization gap (the higher-risk one).
   `@@index([userId, createdAt, id])`.
 - **Not documented in OpenAPI yet:** the bearer requirement isn't expressed as an OpenAPI security
   scheme (would be the next step for a real auth story); the contract/DTOs are otherwise unchanged.
+- **No auth UI, by design:** the token is ambient config (baked into `VITE_API_TOKEN`, sent on every
+  request by the client's `http()` mutator — GET/POST/PATCH/DELETE alike), so there's nothing for a
+  user to log in to. A login screen over a static token would be theatre. Note the honest limitation:
+  the token ships in the frontend bundle, so anyone loading the app has it — this demonstrates the
+  bearer + object-level-ownership *mechanism*, not real security. **UI appears only when auth goes
+  real:** a login view (backend sets an httpOnly cookie, or a token lands in an auth store — not an
+  env var), `401` → redirect-to-login / token-refresh handling (today a 401 just surfaces as the
+  list's error state or a mutation toast), and a user indicator + logout. The seam is `http.ts`
+  (swap the static token for the auth store / cookie) plus a login route.
