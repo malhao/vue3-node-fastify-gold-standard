@@ -8,7 +8,7 @@ datasource db {
 }
 
 model Task {
-  id        String    @id @default(uuid())
+  id        String    @id @default(uuid()) @db.Uuid
   // Owner (the authenticated principal). No User table yet — auth is a stub — but every
   // task is owned, and all queries are scoped by this so the client can't reach others' tasks.
   userId    String
